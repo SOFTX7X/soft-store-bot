@@ -1,5 +1,10 @@
-CORTESFLIX PACK 1 — ULTRA
+CORTESFLIX PACK 1 — ULTRA FAST
 
-239 vídeos em 136 coleções (78 sequências).
-Interface premium em HTML/CSS/JS, sem imagens geradas. Usa thumbnails e preview dos próprios arquivos do Google Drive.
-Abra index.html em um navegador moderno.
+Otimizações:
+- thumbnails menores nos cards (480px)
+- lazy loading via IntersectionObserver
+- menos cards simultâneos na home; catálogo completo continua disponível
+- sem glow seguindo o mouse / sem animações infinitas pesadas
+- player do Google Drive só é criado após clicar em Reproduzir
+- busca limita previews e carrega imagens sob demanda
+- todos os 239 vídeos e 136 coleções preservados

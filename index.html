@@ -4,7 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<title>CORTESFLIX — PACK 1 ULTRA</title>
+<link rel="preconnect" href="https://drive.google.com">
+<link rel="dns-prefetch" href="//drive.google.com">
+<title>CORTESFLIX — PACK 1 ULTRA FAST</title>
 <style>
 :root{
   --bg:#040405;--bg2:#08090b;--panel:#0b0c0f;--panel2:#101217;
@@ -19,7 +21,7 @@ body{
   margin:0;min-height:100vh;overflow-x:hidden;color:var(--text);
   font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;
   background:
-    radial-gradient(900px 580px at var(--mx,72%) var(--my,10%),rgba(255,36,56,.075),transparent 58%),
+    radial-gradient(900px 580px at 72% 10%,rgba(255,36,56,.075),transparent 58%),
     radial-gradient(950px 620px at 12% -8%,rgba(140,16,34,.12),transparent 54%),
     linear-gradient(180deg,#040405,#07080a 46%,#040405);
 }
@@ -31,12 +33,6 @@ body:before{
   background-size:54px 54px;
   mask-image:linear-gradient(to bottom,#000 0 66%,transparent);
 }
-body:after{
-  content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
-  background:linear-gradient(115deg,transparent 0 44%,rgba(255,255,255,.015) 50%,transparent 56%);
-  background-size:220% 100%;animation:ambientSweep 16s linear infinite;
-}
-@keyframes ambientSweep{to{background-position:-220% 0}}
 button,input,a{font:inherit}button,a{-webkit-tap-highlight-color:transparent}
 button{color:inherit}
 ::selection{background:rgba(255,36,56,.32);color:white}
@@ -56,7 +52,7 @@ button{color:inherit}
   transition:.25s ease;border-bottom:1px solid transparent;
 }
 .header.scrolled{
-  background:rgba(4,4,5,.88);backdrop-filter:blur(22px) saturate(150%);
+  background:rgba(4,4,5,.88);backdrop-filter:blur(6px) saturate(125%);
   border-color:rgba(255,255,255,.07);
 }
 .headerInner{display:flex;align-items:center;justify-content:space-between;gap:24px;width:100%}
@@ -90,9 +86,9 @@ button{color:inherit}
 .heroImage{
   position:absolute;inset:-3%;background-position:center 30%;background-size:cover;
   filter:saturate(.76) contrast(1.08) brightness(.72);transform:scale(1.04);
-  transition:opacity .65s ease,transform 8s linear;opacity:.72;
+  transition:opacity .25s ease;opacity:.72;
 }
-.heroImage.zoom{transform:scale(1.095)}
+
 .heroNoise{
   position:absolute;inset:0;z-index:2;pointer-events:none;opacity:.11;mix-blend-mode:screen;
   background-image:repeating-linear-gradient(0deg,rgba(255,255,255,.12) 0 1px,transparent 1px 3px);
@@ -102,9 +98,7 @@ button{color:inherit}
   position:absolute;right:7%;top:20%;width:26vw;height:26vw;z-index:2;pointer-events:none;
   border:1px solid rgba(255,36,56,.08);transform:rotate(18deg);
   box-shadow:0 0 120px rgba(255,36,56,.065),inset 0 0 120px rgba(255,36,56,.025);
-  animation:heroFloat 8s ease-in-out infinite;
-}
-@keyframes heroFloat{50%{transform:translateY(-12px) rotate(21deg)}}
+  }
 .heroContent{position:relative;z-index:5;width:min(760px,73vw)}
 .kicker{display:flex;align-items:center;gap:10px;color:#a8adb6;font-size:9px;font-weight:950;letter-spacing:2.1px;text-transform:uppercase}
 .kicker:before{content:"";width:34px;height:1px;background:var(--red);box-shadow:0 0 12px rgba(255,36,56,.8)}
@@ -127,11 +121,11 @@ button{color:inherit}
 }
 .primary:hover:before,.secondary:hover:before{left:125%}
 .primary:hover{transform:translateY(-2px);box-shadow:0 0 42px rgba(255,36,56,.27),inset 0 1px rgba(255,255,255,.24)}
-.secondary{border-color:rgba(255,255,255,.18);background:rgba(10,11,14,.72);color:white;backdrop-filter:blur(10px)}
+.secondary{border-color:rgba(255,255,255,.18);background:rgba(10,11,14,.72);color:white;backdrop-filter:blur(6px)}
 .secondary:hover{border-color:rgba(255,255,255,.32);background:#14161b;transform:translateY(-2px)}
 .statsFloat{
   position:absolute;right:0;bottom:70px;z-index:6;display:grid;grid-template-columns:repeat(3,1fr);
-  border:1px solid rgba(255,255,255,.11);background:rgba(7,8,10,.66);backdrop-filter:blur(17px);min-width:410px;
+  border:1px solid rgba(255,255,255,.11);background:rgba(7,8,10,.66);backdrop-filter:blur(8px);min-width:410px;
   box-shadow:0 26px 70px rgba(0,0,0,.35);
 }
 .sf{padding:16px 17px;border-right:1px solid rgba(255,255,255,.09)}
@@ -163,7 +157,7 @@ main{position:relative;z-index:5;padding-bottom:90px}
 .tile:hover:after{width:100%}
 .tileContent{position:absolute;inset:auto 17px 16px;z-index:3}
 .tileTop{position:absolute;left:15px;top:14px;z-index:3;display:flex;gap:6px}
-.miniTag{border:1px solid rgba(255,255,255,.18);background:rgba(5,6,8,.62);backdrop-filter:blur(10px);padding:6px 8px;color:#d5d8de;font-size:7px;font-weight:950;letter-spacing:1px;text-transform:uppercase}
+.miniTag{border:1px solid rgba(255,255,255,.18);background:rgba(5,6,8,.62);backdrop-filter:blur(6px);padding:6px 8px;color:#d5d8de;font-size:7px;font-weight:950;letter-spacing:1px;text-transform:uppercase}
 .miniTag.red{border-color:rgba(255,36,56,.5);color:#ff6877;background:rgba(65,5,14,.56)}
 .tileTitle{font-size:17px;line-height:1.25;font-weight:900;letter-spacing:-.35px;text-shadow:0 4px 18px #000;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .tileMeta{display:flex;align-items:center;gap:9px;color:#808691;font-size:8px;text-transform:uppercase;font-weight:900;letter-spacing:.85px;margin-top:8px}
@@ -192,7 +186,7 @@ main{position:relative;z-index:5;padding-bottom:90px}
 
 /* Search */
 .searchLayer{
-  display:none;position:fixed;z-index:120;inset:0;background:rgba(2,2,3,.90);backdrop-filter:blur(20px);overflow:auto;padding:95px 0 50px;
+  display:none;position:fixed;z-index:120;inset:0;background:rgba(2,2,3,.90);;overflow:auto;padding:95px 0 50px;
 }
 .searchLayer.on{display:block;animation:fade .2s ease}
 @keyframes fade{from{opacity:0}to{opacity:1}}
@@ -248,7 +242,7 @@ main{position:relative;z-index:5;padding-bottom:90px}
 .detailBg{position:absolute;inset:0;background-position:center;background-size:cover;filter:saturate(.7) brightness(.42);transform:scale(1.03)}
 .detailHero:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#030304 0%,rgba(3,3,4,.85) 35%,rgba(3,3,4,.2) 70%),linear-gradient(0deg,#030304 0%,transparent 68%)}
 .detailTop{position:absolute;z-index:4;top:23px;left:0;right:0;display:flex;align-items:center;justify-content:space-between}
-.backBtn{height:44px;padding:0 15px;border:1px solid rgba(255,255,255,.17);background:rgba(7,8,10,.65);backdrop-filter:blur(11px);cursor:pointer;font-size:9px;font-weight:950;letter-spacing:1px;text-transform:uppercase}
+.backBtn{height:44px;padding:0 15px;border:1px solid rgba(255,255,255,.17);background:rgba(7,8,10,.65);backdrop-filter:blur(6px);cursor:pointer;font-size:9px;font-weight:950;letter-spacing:1px;text-transform:uppercase}
 .backBtn:hover{border-color:rgba(255,36,56,.65)}
 .detailInfo{position:absolute;z-index:4;left:0;right:0;bottom:36px}
 .detailTitle{max-width:850px;font-size:clamp(36px,5.2vw,70px);font-weight:950;line-height:.96;letter-spacing:-3.5px}
@@ -300,6 +294,17 @@ main{position:relative;z-index:5;padding-bottom:90px}
 .toast.on{opacity:1;transform:none}
 
 /* Reduced motion */
+
+.tile,.bigFeature,.slimFeature{contain:layout paint style}
+.tileImg,.resultThumb,.detailBg,.heroImage{
+  background-color:#0c0e12;
+  background-image:
+    linear-gradient(110deg,rgba(255,255,255,.018),rgba(255,36,56,.035),rgba(255,255,255,.018));
+}
+.tileImg.lazy-bg,.resultThumb.lazy-bg{transition:opacity .22s ease}
+.tileImg:not(.loaded),.resultThumb:not(.loaded){opacity:.72}
+.tileImg.loaded,.resultThumb.loaded{opacity:1}
+
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 @media(max-width:1050px){
@@ -336,7 +341,7 @@ main{position:relative;z-index:5;padding-bottom:90px}
       <div class="mark"></div>
       <div>
         <div class="brandText"><b>CORTES</b>FLIX</div>
-        <div class="brandSub">PACK 1 · Biblioteca privada</div>
+        <div class="brandSub">PACK 1 · Biblioteca otimizada</div>
       </div>
     </div>
     <div class="headerActions">
@@ -481,7 +486,8 @@ const COLLECTIONS=[{"title":"12 guardas controlam milhares de prisioneros com um
 const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 const state={hero:null,current:null,currentItem:0,catalogFilter:'all'};
-const thumb=id=>`https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1200`;
+const thumbCard=id=>`https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w480`;
+const thumbHero=id=>`https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w960`;
 const preview=id=>`https://drive.google.com/file/d/${encodeURIComponent(id)}/preview`;
 const download=id=>`https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}`;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
@@ -500,25 +506,55 @@ function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('on');
 function tile(c,idx=0){
   const item=firstAvailable(c);
   return `<article class="tile" data-title="${esc(c.title)}" data-idx="${COLLECTIONS.indexOf(c)}">
-    <div class="tileImg" style="background-image:linear-gradient(135deg,rgba(255,36,56,.08),transparent 45%),url('${thumb(item.id)}')"></div>
+    <div class="tileImg lazy-bg" data-img="${esc(item.id)}"></div>
     <div class="tileShade"></div>
     <div class="tileTop"><span class="miniTag ${c.items.length>1?'red':''}">${c.items.length>1?'SEQUÊNCIA':'CORTE'}</span></div>
     <div class="tileContent"><div class="tileTitle">${esc(c.title)}</div><div class="tileMeta"><span>${c.items.length} ${c.items.length===1?'vídeo':'partes'}</span><span>•</span><span>PACK 1</span></div></div>
   </article>`;
 }
+
+const bgObserver = 'IntersectionObserver' in window ? new IntersectionObserver(entries=>{
+  entries.forEach(entry=>{
+    if(!entry.isIntersecting) return;
+    const el=entry.target,id=el.dataset.img;
+    if(!id){bgObserver.unobserve(el);return}
+    const im=new Image();
+    im.decoding='async';
+    im.onload=()=>{
+      el.style.backgroundImage=`linear-gradient(135deg,rgba(255,36,56,.055),transparent 45%),url("${thumbCard(id)}")`;
+      el.classList.add('loaded');
+    };
+    im.onerror=()=>el.classList.add('loaded');
+    im.src=thumbCard(id);
+    bgObserver.unobserve(el);
+  });
+},{rootMargin:'260px 220px',threshold:.01}) : null;
+
+function observeBackgrounds(root=document){
+  root.querySelectorAll('.lazy-bg[data-img]:not([data-observed])').forEach(el=>{
+    el.dataset.observed='1';
+    if(bgObserver) bgObserver.observe(el);
+    else{
+      el.style.backgroundImage=`url("${thumbCard(el.dataset.img)}")`;
+      el.classList.add('loaded');
+    }
+  });
+}
+
 function bindTiles(root=document){
   root.querySelectorAll('.tile,.bigFeature,.slimFeature').forEach(el=>{
     el.addEventListener('click',()=>openDetail(COLLECTIONS[Number(el.dataset.idx)]));
   });
 }
 function renderRails(){
-  const seq=sequences.slice(0,18);
+  const seq=sequences.slice(0,10);
   $('#sequenceRail').innerHTML=seq.map(tile).join('');
-  const sr=(series.length?series:COLLECTIONS).slice(0,18);
+  const sr=(series.length?series:COLLECTIONS).slice(0,10);
   $('#seriesRail').innerHTML=sr.map(tile).join('');
-  const more=COLLECTIONS.filter(c=>!seq.includes(c)&&!sr.includes(c)).slice(0,24);
+  const more=COLLECTIONS.filter(c=>!seq.includes(c)&&!sr.includes(c)).slice(0,12);
   $('#moreRail').innerHTML=more.map(tile).join('');
   bindTiles(document);
+  observeBackgrounds(document);
 
   const picks=[
     sequences.find(c=>c.items.length>=4)||sequences[0],
@@ -528,13 +564,14 @@ function renderRails(){
   const big=picks[0], s1=picks[1]||COLLECTIONS[7], s2=picks[2]||COLLECTIONS[12];
   $('#featureStrip').innerHTML=`
     <article class="bigFeature" data-idx="${COLLECTIONS.indexOf(big)}">
-      <div class="tileImg" style="background-image:url('${thumb(firstAvailable(big).id)}')"></div><div class="bigShade"></div>
+      <div class="tileImg lazy-bg" data-img="${esc(firstAvailable(big).id)}"></div><div class="bigShade"></div>
       <div class="bigContent"><div class="bigNum">01</div><div class="bigTitle">${esc(big.title)}</div><div class="bigMeta">${big.items.length} ${big.items.length===1?'vídeo':'partes'} · abrir coleção</div></div>
     </article>
     <div class="stackFeature">
-      ${[s1,s2].map((c,i)=>`<article class="slimFeature" data-idx="${COLLECTIONS.indexOf(c)}"><div class="tileImg" style="background-image:url('${thumb(firstAvailable(c).id)}')"></div><div class="tileShade"></div><div class="tileContent"><div class="miniTag ${c.items.length>1?'red':''}" style="display:inline-block;margin-bottom:7px">${c.items.length>1?'SEQUÊNCIA':'CORTE'}</div><div class="tileTitle">${esc(c.title)}</div><div class="tileMeta">${c.items.length} ${c.items.length===1?'vídeo':'partes'} · PACK 1</div></div></article>`).join('')}
+      ${[s1,s2].map((c,i)=>`<article class="slimFeature" data-idx="${COLLECTIONS.indexOf(c)}"><div class="tileImg lazy-bg" data-img="${esc(firstAvailable(c).id)}"></div><div class="tileShade"></div><div class="tileContent"><div class="miniTag ${c.items.length>1?'red':''}" style="display:inline-block;margin-bottom:7px">${c.items.length>1?'SEQUÊNCIA':'CORTE'}</div><div class="tileTitle">${esc(c.title)}</div><div class="tileMeta">${c.items.length} ${c.items.length===1?'vídeo':'partes'} · PACK 1</div></div></article>`).join('')}
     </div>`;
   bindTiles($('#featureStrip'));
+  observeBackgrounds($('#featureStrip'));
 }
 
 function setHero(c){
@@ -544,20 +581,19 @@ function setHero(c){
   $('#heroDesc').textContent=c.items.length>1
     ?'Uma sequência completa agrupada em ordem. Abra a coleção e navegue pelas partes sem voltar para a pasta do Drive.'
     :'Corte disponível para assistir dentro da biblioteca e baixar diretamente quando precisar.';
-  const img=$('#heroImage');img.style.opacity='.18';
-  setTimeout(()=>{img.style.backgroundImage=`url("${thumb(item.id)}")`;img.style.opacity='.72';img.classList.remove('zoom');requestAnimationFrame(()=>img.classList.add('zoom'))},180);
+  const img=$('#heroImage');
+  img.style.backgroundImage=`url("${thumbHero(item.id)}")`;
+  img.style.opacity='.68';
 }
 const heroCandidates=sequences.filter(c=>c.items.length>=3).slice(0,8);
-let heroIndex=0;
 setHero(heroCandidates[0]||sequences[0]||COLLECTIONS[0]);
-setInterval(()=>{if($('#detail').classList.contains('on')||$('#searchLayer').classList.contains('on'))return;heroIndex=(heroIndex+1)%Math.max(1,heroCandidates.length);setHero(heroCandidates[heroIndex]||COLLECTIONS[0])},9000);
 $('#heroPlay').onclick=()=>{const c=state.hero;openDetail(c,Math.max(0,c.items.findIndex(i=>i.available)))};
 $('#heroDetails').onclick=()=>openDetail(state.hero);
 
 function openDetail(c,startIndex=null){
   state.current=c;
   const first=firstAvailable(c);
-  $('#detailBg').style.backgroundImage=`url("${thumb(first.id)}")`;
+  $('#detailBg').style.backgroundImage=`url("${thumbHero(first.id)}")`;
   $('#detailTitle').textContent=c.title;
   $('#detailCount').textContent=`${c.items.length} ${c.items.length===1?'VÍDEO':'PARTES'}`;
   $('#detailType').textContent=typeOf(c);
@@ -572,20 +608,30 @@ function openDetail(c,startIndex=null){
     </div>`).join('');
   $('#timeline').innerHTML=c.items.map((i,n)=>`<button class="timeItem ${i.available?'':'unavailableEp'}" data-i="${n}"><b>${esc(i.label)}</b><span>${i.available?'Abrir vídeo':'Indisponível'}</span></button>`).join('');
   $('#timelineWrap').style.display=c.items.length>1?'block':'none';
-  $$('#episodeList .episode').forEach(el=>el.onclick=()=>{const i=Number(el.dataset.i);if(c.items[i].available)playItem(i)});
-  $$('#timeline .timeItem').forEach(el=>el.onclick=()=>{const i=Number(el.dataset.i);if(c.items[i].available)playItem(i)});
+  $$('#episodeList .episode').forEach(el=>el.onclick=()=>{const i=Number(el.dataset.i);if(c.items[i].available)selectItem(i)});
+  $$('#timeline .timeItem').forEach(el=>el.onclick=()=>{const i=Number(el.dataset.i);if(c.items[i].available)selectItem(i)});
   $('#detail').classList.add('on');document.body.style.overflow='hidden';
   const idx=startIndex!==null?startIndex:Math.max(0,c.items.findIndex(i=>i.available));
-  if(c.items[idx]?.available)playItem(idx);else{
+  if(c.items[idx]?.available)selectItem(idx);else{
     $('#videoArea').innerHTML='<div class="videoPlaceholder">Nenhum arquivo disponível nesta coleção</div>';
     $('#downloadBtn').style.display='none';
   }
   $('#detail').scrollTop=0;
 }
+function selectItem(index){
+  const c=state.current,item=c.items[index];if(!item||!item.available)return;
+  state.currentItem=index;
+  $('#nowTitle').textContent=item.name;
+  const d=$('#downloadBtn');d.href=download(item.id);d.style.display='inline-flex';
+  $$('#episodeList .episode').forEach((e,n)=>e.classList.toggle('active',n===index));
+  $$('#timeline .timeItem').forEach((e,n)=>e.classList.toggle('active',n===index));
+  $('#videoArea').innerHTML=`<div class="videoPlaceholder"><button class="primary" id="loadPlayerBtn" style="min-width:180px">▶ Reproduzir vídeo</button><div style="margin-top:13px;color:#565c66;font-size:8px;letter-spacing:1px">O PLAYER SÓ É CARREGADO AO CLICAR</div></div>`;
+  $('#loadPlayerBtn').onclick=()=>playItem(index);
+}
 function playItem(index){
   const c=state.current,item=c.items[index];if(!item||!item.available)return;
   state.currentItem=index;
-  $('#videoArea').innerHTML=`<div class="videoFrame"><iframe src="${preview(item.id)}" allow="autoplay; fullscreen" allowfullscreen loading="eager"></iframe></div>`;
+  $('#videoArea').innerHTML=`<div class="videoFrame"><iframe src="${preview(item.id)}" allow="autoplay; fullscreen" allowfullscreen></iframe></div>`;
   $('#nowTitle').textContent=item.name;
   const d=$('#downloadBtn');d.href=download(item.id);d.style.display='inline-flex';
   $$('#episodeList .episode').forEach((e,n)=>e.classList.toggle('active',n===index));
@@ -602,8 +648,9 @@ function openSearch(){
 function closeSearch(){ $('#searchLayer').classList.remove('on');document.body.style.overflow='';$('#searchInput').value='';}
 function renderSearch(q){
   const query=q.trim().toLocaleLowerCase('pt-BR');
-  const list=(query?COLLECTIONS.filter(c=>blob(c).includes(query)):sequences.slice(0,8)).slice(0,30);
-  $('#results').innerHTML=list.length?list.map(c=>`<div class="resultItem" data-idx="${COLLECTIONS.indexOf(c)}"><div class="resultThumb" style="background-image:linear-gradient(90deg,rgba(3,3,4,.15),rgba(3,3,4,.4)),url('${thumb(firstAvailable(c).id)}')"></div><div><div class="resultTitle">${esc(c.title)}</div><div class="resultMeta">${c.items.length} ${c.items.length===1?'vídeo':'partes'} · ${typeOf(c)}</div></div><div class="resultArrow">›</div></div>`).join(''):'<div class="resultItem" style="grid-template-columns:1fr;padding:0 18px;cursor:default"><div><div class="resultTitle">Nenhum resultado.</div><div class="resultMeta">Tente outro termo.</div></div></div>';
+  const list=(query?COLLECTIONS.filter(c=>blob(c).includes(query)):sequences.slice(0,8)).slice(0,16);
+  $('#results').innerHTML=list.length?list.map(c=>`<div class="resultItem" data-idx="${COLLECTIONS.indexOf(c)}"><div class="resultThumb lazy-bg" data-img="${esc(firstAvailable(c).id)}"></div><div><div class="resultTitle">${esc(c.title)}</div><div class="resultMeta">${c.items.length} ${c.items.length===1?'vídeo':'partes'} · ${typeOf(c)}</div></div><div class="resultArrow">›</div></div>`).join(''):'<div class="resultItem" style="grid-template-columns:1fr;padding:0 18px;cursor:default"><div><div class="resultTitle">Nenhum resultado.</div><div class="resultMeta">Tente outro termo.</div></div></div>';
+  observeBackgrounds($('#results'));
   $$('#results .resultItem[data-idx]').forEach(el=>el.onclick=()=>{closeSearch();openDetail(COLLECTIONS[Number(el.dataset.idx)])});
 }
 $('#openSearch').onclick=openSearch;$('#searchClose').onclick=closeSearch;$('#searchInput').oninput=e=>renderSearch(e.target.value);
@@ -640,13 +687,8 @@ window.addEventListener('scroll',()=>{
   document.documentElement.style.setProperty('--progress',max>0?`${(scrollY/max)*100}%`:'0%');
   $('#header').classList.toggle('scrolled',scrollY>34);
 });
-window.addEventListener('pointermove',e=>{
-  document.body.style.setProperty('--mx',`${(e.clientX/innerWidth)*100}%`);
-  document.body.style.setProperty('--my',`${(e.clientY/innerHeight)*100}%`);
-},{passive:true});
 
 renderRails();
-renderCatalog();
 </script>
 </body>
 </html>
