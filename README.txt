@@ -1,10 +1,9 @@
-CORTESFLIX PACK 1 — ULTRA FAST
+CORTESFLIX PACK 1 — ULTRA FAST TEXT FIX
 
-Otimizações:
-- thumbnails menores nos cards (480px)
-- lazy loading via IntersectionObserver
-- menos cards simultâneos na home; catálogo completo continua disponível
-- sem glow seguindo o mouse / sem animações infinitas pesadas
-- player do Google Drive só é criado após clicar em Reproduzir
-- busca limita previews e carrega imagens sob demanda
-- todos os 239 vídeos e 136 coleções preservados
+Correções desta versão:
+- títulos das thumbs não usam mais limite de 2 linhas
+- cards mais altos para acomodar nomes longos
+- line-height e letter-spacing corrigidos para não cortar letras
+- títulos grandes do destaque e da página do vídeo corrigidos
+- catálogo, busca, episódios e 'reproduzindo' sem reticências forçadas
+- otimizações de performance da versão ULTRA FAST preservadas
