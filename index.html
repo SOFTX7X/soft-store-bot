@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PACK 1 — Biblioteca de Cortes</title>
+<style>
+:root {
+  --bg:#08090b; --panel:#111318; --panel2:#181b22; --text:#f7f7f8;
+  --muted:#979ba6; --red:#e62429; --line:#252832;
+}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(180deg,#08090b,#0d0f13 55%,#08090b);color:var(--text);font-family:Inter,Arial,sans-serif;min-height:100vh}
+header{position:sticky;top:0;z-index:5;background:rgba(8,9,11,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.wrap{max-width:1180px;margin:auto;padding:0 20px}
+.top{height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.brand{font-weight:900;letter-spacing:.4px;font-size:21px}
+.brand b{color:var(--red)}
+.badge{font-size:12px;color:#fff;background:#23262e;border:1px solid #30343e;padding:7px 10px;border-radius:999px}
+.hero{padding:52px 0 25px}
+.hero h1{font-size:clamp(32px,6vw,62px);line-height:.98;margin:0 0 14px;letter-spacing:-2.5px;max-width:760px}
+.hero p{color:var(--muted);font-size:16px;max-width:700px;line-height:1.6}
+.controls{display:flex;gap:10px;margin:24px 0 34px;flex-wrap:wrap}
+input{flex:1;min-width:230px;background:#101217;border:1px solid var(--line);color:#fff;padding:14px 15px;border-radius:12px;outline:none}
+input:focus{border-color:#4a4f5e}
+.count{display:flex;align-items:center;color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding-bottom:50px}
+.card{background:linear-gradient(145deg,#111318,#0e1014);border:1px solid var(--line);border-radius:18px;overflow:hidden;transition:.2s}
+.card:hover{transform:translateY(-2px);border-color:#3a3f4b}
+.cover{height:140px;background:radial-gradient(circle at 80% 20%,rgba(230,36,41,.35),transparent 30%),linear-gradient(135deg,#20242d,#101217);display:flex;align-items:end;padding:18px;position:relative}
+.cover:before{content:"";position:absolute;inset:0;background:linear-gradient(transparent,rgba(0,0,0,.48))}
+.num{position:absolute;top:14px;right:14px;font-size:11px;background:rgba(0,0,0,.55);padding:6px 8px;border-radius:999px}
+.cover h2{position:relative;margin:0;font-size:20px;line-height:1.1}
+.body{padding:14px}
+.part{display:flex;align-items:center;gap:10px;padding:11px 4px;border-bottom:1px solid #1f222a}
+.part:last-child{border-bottom:0}
+.pill{flex:0 0 auto;font-size:11px;color:#fff;background:#252933;padding:6px 8px;border-radius:7px}
+.ptitle{font-size:13px;color:#d4d6dc;line-height:1.25;flex:1}
+.play{border:0;background:var(--red);color:white;width:34px;height:34px;border-radius:50%;cursor:pointer;font-weight:bold}
+.empty{grid-column:1/-1;color:var(--muted);padding:40px 0}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.86);display:none;align-items:center;justify-content:center;padding:20px;z-index:20}
+.modal.on{display:flex}
+.box{width:min(920px,100%);background:#0d0f13;border:1px solid #2b2f38;border-radius:18px;overflow:hidden}
+.mhead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--line);gap:10px}
+.mtitle{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.close{background:#20232b;border:0;color:white;width:34px;height:34px;border-radius:9px;cursor:pointer}
+.frame{aspect-ratio:16/9;background:#000}
+iframe{width:100%;height:100%;border:0}
+.note{padding:16px;color:var(--muted);font-size:12px;line-height:1.5}
+@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.grid{grid-template-columns:1fr} .hero{padding-top:35px} .top{height:62px}}
+</style>
+</head>
+<body>
+<header><div class="wrap top"><div class="brand"><b>PACK 1</b> / CORTES</div><div class="badge">Protótipo organizado</div></div></header>
+<main class="wrap">
+<section class="hero">
+<h1>Seus cortes, organizados por conteúdo.</h1>
+<p>Em vez de dezenas de vídeos soltos, cada filme, série ou assunto vira uma coleção. As partes ficam agrupadas e em ordem para abrir rapidamente.</p>
+<div class="controls"><input id="q" placeholder="Buscar filme, série ou corte..."><div class="count" id="count"></div></div>
+</section>
+<section class="grid" id="grid"></section>
+</main>
+<div class="modal" id="modal">
+ <div class="box">
+  <div class="mhead"><div class="mtitle" id="mtitle">Vídeo</div><button class="close" id="close">✕</button></div>
+  <div class="frame"><iframe id="player" allow="autoplay" allowfullscreen></iframe></div>
+  <div class="note">Prévia carregada diretamente pelo Google Drive. A reprodução depende da permissão do arquivo no Drive.</div>
+ </div>
+</div>
+<script>
+const groups = [{"group": "Atores mais ricos do mundo 2023", "parts": [{"part": "Parte 1", "title": "Atores mais ricos do mundo 2023", "id": "15UJESWKxs4kIOrbRaw0-fqc8Qyq7vC7V"}, {"part": "Parte 2", "title": "Atores mais ricos do mundo 2023 - Parte 2", "id": "1ksNXs2-Cq0_IoVQZymELVx_cv5Kg3gW2"}, {"part": "Parte final", "title": "Atores mais ricos do mundo 2023 - Parte final", "id": "19Yn14S34uP-pHWls6arb9SwmoFEOCv8_"}]}, {"group": "Eles nascem com uma marca que define a sua vida", "parts": [{"part": "Parte 1", "title": "Eles nascem com uma marca que define a sua vida", "id": "1gwL0ltG0-QSxr3bjVhXFTpiyAPLBdgcZ"}, {"part": "Parte final", "title": "Eles nascem com uma marca que define a sua vida - Parte final", "id": "1_AC7sTJd-56a4F0bVl5TMbFYQf6vZkG8"}]}, {"group": "Barbie", "parts": [{"part": "Corte 1", "title": "Curiosidades sobre Barbie", "id": "1Ec0dOrGcJZwOGwn1DnnuRTW7Wla2QkbC"}, {"part": "Corte 2", "title": "Por que Barbie Girl não está no filme", "id": "1wPZsvuEKabyQOQvDDjXR65y7sIEtGGm_"}]}, {"group": "Ficção científica na Netflix", "parts": [{"part": "Parte 1", "title": "Um dos melhores filmes de ficção científica na Netflix", "id": "12xSzCdHQH5m0oet982P7vNkIjcrDi3uK"}]}, {"group": "Oppenheimer", "parts": [{"part": "Parte 1", "title": "Christopher Nolan criou uma bomba atômica para Oppenheimer", "id": "1g4tXBoqzXGb4qBIV3CsQwkBJs2nk5YNj"}]}, {"group": "Meu Amigo Enzo", "parts": [{"part": "Parte 1", "title": "Filme Meu Amigo Enzo", "id": "1W2FXoJKsHk57ZBfLXIGTyhgq0Kpc2ycN"}]}, {"group": "Tom Hanks", "parts": [{"part": "Parte 1", "title": "O melhor filme de Tom Hanks", "id": "1zM3QUxDxPDg97DYBCXrt3J-EQfwOTbS-"}]}, {"group": "Fuga da prisão", "parts": [{"part": "Corte 1", "title": "Ele escapou da cadeia usando ferramentas simples", "id": "14MPguUkQ3GWFDFFSBBvz9S4Ofgq_WNtN"}, {"part": "Corte 2", "title": "Como um gênio escapa da cadeia", "id": "1O2p20fvR_EL6xkWf_xGRDNAwA8M0eJV1"}]}, {"group": "Efeito borboleta", "parts": [{"part": "Parte 1", "title": "Ele é o verdadeiro mestre do efeito borboleta", "id": "1q5MQ8RuV3lLB5yeQtxf-JiDZFtHQfemx"}]}, {"group": "Presente misterioso", "parts": [{"part": "Parte 1", "title": "O pai o abandonou no aniversário, mas deixou um presente misterioso", "id": "17BhvU8JnV3d0KLFKiYUjKVgjRPG5cMIK"}]}];
+const grid = document.getElementById('grid');
+const q = document.getElementById('q');
+const count = document.getElementById('count');
+const modal = document.getElementById('modal');
+const player = document.getElementById('player');
+const mtitle = document.getElementById('mtitle');
+
+function render() {
+ const term = q.value.trim().toLowerCase();
+ const filtered = groups.filter(g => (g.group + ' ' + g.parts.map(p=>p.title+' '+p.part).join(' ')).toLowerCase().includes(term));
+ grid.innerHTML = '';
+ filtered.forEach(g => {
+  const card = document.createElement('article');
+  card.className='card';
+  card.innerHTML = `<div class="cover"><div class="num">${g.parts.length} ${g.parts.length===1?'vídeo':'vídeos'}</div><h2>${g.group}</h2></div>
+  <div class="body">${g.parts.map(p=>`<div class="part"><span class="pill">${p.part}</span><span class="ptitle">${p.title}</span><button class="play" data-id="${p.id}" data-title="${p.title}">▶</button></div>`).join('')}</div>`;
+  grid.appendChild(card);
+ });
+ count.textContent = `${filtered.length} coleções`;
+ if(!filtered.length) grid.innerHTML='<div class="empty">Nenhum corte encontrado.</div>';
+ document.querySelectorAll('.play').forEach(btn=>btn.onclick=()=>openVideo(btn.dataset.id,btn.dataset.title));
+}
+function openVideo(id,title) {
+ mtitle.textContent=title;
+ player.src=`https://drive.google.com/file/d/${id}/preview`;
+ modal.classList.add('on');
+}
+function closeModal() {
+ player.src='';
+ modal.classList.remove('on');
+}
+q.addEventListener('input', render);
+document.getElementById('close').onclick=closeModal;
+modal.addEventListener('click',e=>{if(e.target===modal) closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape') closeModal()});
+render();
+</script>
+</body>
+</html>
