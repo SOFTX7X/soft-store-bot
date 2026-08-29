@@ -3,7 +3,7 @@ import axios from 'axios';
 const PRODUCT = {
   id: 'viralflix',
   name: 'VIRALFLIX',
-  priceCents: 1000,
+  priceCents: 100,
   deliveryUrl: 'https://drive.google.com/file/d/1j8EJL_OjCmkgA8AjZzc0D6_pK4Y3qB9G/view?usp=drivesdk',
 };
 
