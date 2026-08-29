@@ -3,7 +3,7 @@ import axios from 'axios';
 const PRODUCT = {
   id: 'viralflix',
   name: 'VIRALFLIX',
-  priceCents: 100,
+  priceCents: 500,
   deliveryUrl: 'https://drive.google.com/file/d/1j8EJL_OjCmkgA8AjZzc0D6_pK4Y3qB9G/view?usp=drivesdk',
 };
 
@@ -20,7 +20,7 @@ const PRODUCT_CAPTION = `🎬 VIRALFLIX
 + de 50.000 cortes virais
 Acesso vitalício
 
-💰 R$ 1,00`;
+💰 R$ 5,00`;
 
 const SUPPORT_CAPTION = `💬 SUPORTE
 
@@ -36,7 +36,7 @@ const START_KEYBOARD = {
 
 const PRODUCT_KEYBOARD = {
   inline_keyboard: [
-    [{ text: '🛒 Comprar por R$ 1,00', callback_data: 'comprar_viralflix' }],
+    [{ text: '🛒 Comprar por R$ 5,00', callback_data: 'comprar_viralflix' }],
     [{ text: '⬅️ Voltar', callback_data: 'inicio' }],
   ],
 };
@@ -226,7 +226,6 @@ As compras aprovadas são entregues automaticamente neste chat.`,
     );
 
     const tx = await createPix(chatId, q.from);
-
     const pix = tx.pix.copy_paste;
 
     await axios.post(
@@ -235,7 +234,7 @@ As compras aprovadas são entregues automaticamente neste chat.`,
         chat_id: chatId,
         parse_mode: 'HTML',
 
-        text: `💳 <b>${PRODUCT.name} — R$ 1,00</b>
+        text: `💳 <b>${PRODUCT.name} — R$ 5,00</b>
 
 PIX copia e cola:
 
@@ -298,11 +297,8 @@ export default async function handler(req, res) {
       });
     }
 
-    const chatId =
-      req.body?.message?.chat?.id;
-
-    const text =
-      req.body?.message?.text;
+    const chatId = req.body?.message?.chat?.id;
+    const text = req.body?.message?.text;
 
     if (
       chatId &&
@@ -326,4 +322,4 @@ export default async function handler(req, res) {
       error: 'Falha ao processar.',
     });
   }
-    }
+        }
