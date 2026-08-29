@@ -1,8 +1,12 @@
 import axios from 'axios';
 
-const START_MESSAGE = `🛍️ SOFT Store
+const START_CAPTION = `🛍️ SOFT STORE
 
-Bem-vindo! Escolha uma opção abaixo:`;
+Bem-vindo à SOFT Store.
+
+Escolha uma opção abaixo:`;
+
+const BANNER_URL = 'https://soft-store-bot.vercel.app/assets/banner.png';
 
 const START_KEYBOARD = {
   inline_keyboard: [
@@ -45,10 +49,11 @@ export default async function handler(req, res) {
 
   try {
     await axios.post(
-      `https://api.telegram.org/bot${token}/sendMessage`,
+      `https://api.telegram.org/bot${token}/sendPhoto`,
       {
         chat_id: chatId,
-        text: START_MESSAGE,
+        photo: BANNER_URL,
+        caption: START_CAPTION,
         reply_markup: START_KEYBOARD,
       },
       { timeout: 10_000 },
