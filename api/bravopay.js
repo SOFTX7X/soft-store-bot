@@ -4,17 +4,26 @@ import axios from 'axios';
 const PRODUCT = {
   id: 'viralflix',
   name: 'VIRALFLIX',
-  priceCents: 1000,
+  priceCents: 500,
   deliveryUrl: 'https://drive.google.com/file/d/1j8EJL_OjCmkgA8AjZzc0D6_pK4Y3qB9G/view?usp=drivesdk',
 };
 
-export const config = { api: { bodyParser: false } };
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 function readRawBody(req) {
   return new Promise((resolve, reject) => {
     let data = '';
+
     req.setEncoding('utf8');
-    req.on('data', chunk => { data += chunk; });
+
+    req.on('data', chunk => {
+      data += chunk;
+    });
+
     req.on('end', () => resolve(data));
     req.on('error', reject);
   });
@@ -22,66 +31,258 @@ function readRawBody(req) {
 
 function verify(rawBody, header, secret, toleranceSec = 300) {
   if (!header || !secret) return false;
-  const parts = Object.fromEntries(header.split(',').map(part => {
-    const i = part.indexOf('=');
-    return [part.slice(0, i), part.slice(i + 1)];
-  }));
+
+  const parts = Object.fromEntries(
+    header.split(',').map(part => {
+      const i = part.indexOf('=');
+
+      return [
+        part.slice(0, i),
+        part.slice(i + 1),
+      ];
+    })
+  );
+
   const timestamp = Number(parts.t);
   const signature = parts.v1;
-  if (!timestamp || !signature || Math.abs(Date.now() / 1000 - timestamp) > toleranceSec) return false;
-  const expected = crypto.createHmac('sha256', secret).update(`${timestamp}.${rawBody}`).digest('hex');
-  if (expected.length !== signature.length) return false;
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+
+  if (
+    !timestamp ||
+    !signature ||
+    Math.abs(Date.now() / 1000 - timestamp) > toleranceSec
+  ) {
+    return false;
+  }
+
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(`${timestamp}.${rawBody}`)
+    .digest('hex');
+
+  if (expected.length !== signature.length) {
+    return false;
+  }
+
+  return crypto.timingSafeEqual(
+    Buffer.from(expected),
+    Buffer.from(signature)
+  );
 }
 
 function parseReference(ref = '') {
-  const [store, productId, chatId] = String(ref).split(':');
-  if (store !== 'softstore' || productId !== PRODUCT.id || !/^\d+$/.test(chatId || '')) return null;
-  return { productId, chatId };
+  const [store, productId, chatId] =
+    String(ref).split(':');
+
+  if (
+    store !== 'softstore' ||
+    productId !== PRODUCT.id ||
+    !/^\d+$/.test(chatId || '')
+  ) {
+    return null;
+  }
+
+  return {
+    productId,
+    chatId,
+  };
 }
 
 async function deliver(token, chatId, transactionId) {
-  await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
-    chat_id: chatId,
-    disable_web_page_preview: true,
-    text: `✅ PAGAMENTO APROVADO\n\n🎬 ${PRODUCT.name}\nAcesso vitalício\n\n📦 Seu acesso:\n${PRODUCT.deliveryUrl}\n\nObrigado pela compra!`,
-  }, { timeout: 10000, headers: { 'X-SoftStore-Transaction': transactionId || '' } });
+  await axios.post(
+    `https://api.telegram.org/bot${token}/sendMessage`,
+    {
+      chat_id: chatId,
+      disable_web_page_preview: true,
+
+      text: `✅ PAGAMENTO APROVADO
+
+🎬 ${PRODUCT.name}
+Acesso vitalício
+
+📦 Seu acesso:
+${PRODUCT.deliveryUrl}
+
+Obrigado pela compra!`,
+    },
+    {
+      timeout: 10000,
+
+      headers: {
+        'X-SoftStore-Transaction':
+          transactionId || '',
+      },
+    }
+  );
 }
 
 export default async function handler(req, res) {
-  if (req.method === 'GET') return res.status(200).json({ ok: true, webhook: 'BravoPay' });
-  if (req.method !== 'POST') return res.status(405).json({ ok: false });
+
+  /*
+   * TESTE TEMPORÁRIO DE ENTREGA
+   *
+   * Exemplo:
+   * /api/bravopay?test=1&chat_id=123456789
+   */
+
+  if (
+    req.method === 'GET' &&
+    req.query?.test === '1'
+  ) {
+    try {
+      const chatId =
+        String(req.query?.chat_id || '');
+
+      if (!/^\d+$/.test(chatId)) {
+        return res.status(400).json({
+          ok: false,
+          error: 'chat_id inválido',
+        });
+      }
+
+      const token =
+        process.env.TELEGRAM_BOT_TOKEN;
+
+      if (!token) {
+        throw new Error(
+          'TELEGRAM_BOT_TOKEN não configurada'
+        );
+      }
+
+      await deliver(
+        token,
+        chatId,
+        'TESTE_MANUAL'
+      );
+
+      return res.status(200).json({
+        ok: true,
+        test: true,
+        delivered: true,
+      });
+
+    } catch (error) {
+      console.error(
+        'Teste de entrega error',
+        error.response?.data || error.message
+      );
+
+      return res.status(500).json({
+        ok: false,
+        test: true,
+      });
+    }
+  }
+
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      ok: true,
+      webhook: 'BravoPay',
+    });
+  }
+
+  if (req.method !== 'POST') {
+    return res.status(405).json({
+      ok: false,
+    });
+  }
 
   try {
-    const rawBody = await readRawBody(req);
-    const secret = process.env.BRAVOPAY_WEBHOOK_SECRET;
-    const signature = req.headers['bravopay-signature'] || req.headers['x-bravopay-signature'];
+    const rawBody =
+      await readRawBody(req);
+
+    const secret =
+      process.env.BRAVOPAY_WEBHOOK_SECRET;
+
+    const signature =
+      req.headers['bravopay-signature'] ||
+      req.headers['x-bravopay-signature'];
 
     if (!verify(rawBody, signature, secret)) {
-      return res.status(401).json({ ok: false, error: 'Assinatura inválida.' });
+      return res.status(401).json({
+        ok: false,
+        error: 'Assinatura inválida.',
+      });
     }
 
-    const event = JSON.parse(rawBody);
-    if (event?.type !== 'transaction.paid') return res.status(200).json({ ok: true, ignored: true });
+    const event =
+      JSON.parse(rawBody);
 
-    const tx = event.data || {};
-    const ref = parseReference(tx.external_reference) || (
-      tx.metadata?.product_id === PRODUCT.id && /^\d+$/.test(String(tx.metadata?.telegram_chat_id || ''))
-        ? { productId: PRODUCT.id, chatId: String(tx.metadata.telegram_chat_id) }
-        : null
+    if (
+      event?.type !== 'transaction.paid'
+    ) {
+      return res.status(200).json({
+        ok: true,
+        ignored: true,
+      });
+    }
+
+    const tx =
+      event.data || {};
+
+    const ref =
+      parseReference(
+        tx.external_reference
+      ) ||
+      (
+        tx.metadata?.product_id ===
+          PRODUCT.id &&
+        /^\d+$/.test(
+          String(
+            tx.metadata
+              ?.telegram_chat_id || ''
+          )
+        )
+          ? {
+              productId: PRODUCT.id,
+              chatId: String(
+                tx.metadata
+                  .telegram_chat_id
+              ),
+            }
+          : null
+      );
+
+    if (
+      !ref ||
+      Number(tx.amount_cents) !==
+        PRODUCT.priceCents ||
+      String(tx.status).toUpperCase() !==
+        'PAID'
+    ) {
+      return res.status(200).json({
+        ok: true,
+        ignored: true,
+      });
+    }
+
+    const token =
+      process.env.TELEGRAM_BOT_TOKEN;
+
+    if (!token) {
+      throw new Error(
+        'TELEGRAM_BOT_TOKEN não configurada'
+      );
+    }
+
+    await deliver(
+      token,
+      ref.chatId,
+      tx.id
     );
 
-    if (!ref || Number(tx.amount_cents) !== PRODUCT.priceCents || String(tx.status).toUpperCase() !== 'PAID') {
-      return res.status(200).json({ ok: true, ignored: true });
-    }
+    return res.status(200).json({
+      ok: true,
+      delivered: true,
+    });
 
-    const token = process.env.TELEGRAM_BOT_TOKEN;
-    if (!token) throw new Error('TELEGRAM_BOT_TOKEN não configurada');
-
-    await deliver(token, ref.chatId, tx.id);
-    return res.status(200).json({ ok: true, delivered: true });
   } catch (error) {
-    console.error('BravoPay webhook error', error.response?.data || error.message);
-    return res.status(500).json({ ok: false });
+    console.error(
+      'BravoPay webhook error',
+      error.response?.data || error.message
+    );
+
+    return res.status(500).json({
+      ok: false,
+    });
   }
 }
