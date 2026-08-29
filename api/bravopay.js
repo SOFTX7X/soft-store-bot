@@ -35,11 +35,7 @@ function verify(rawBody, header, secret, toleranceSec = 300) {
   const parts = Object.fromEntries(
     header.split(',').map(part => {
       const i = part.indexOf('=');
-
-      return [
-        part.slice(0, i),
-        part.slice(i + 1),
-      ];
+      return [part.slice(0, i), part.slice(i + 1)];
     })
   );
 
@@ -70,8 +66,7 @@ function verify(rawBody, header, secret, toleranceSec = 300) {
 }
 
 function parseReference(ref = '') {
-  const [store, productId, chatId] =
-    String(ref).split(':');
+  const [store, productId, chatId] = String(ref).split(':');
 
   if (
     store !== 'softstore' ||
@@ -93,7 +88,6 @@ async function deliver(token, chatId, transactionId) {
     {
       chat_id: chatId,
       disable_web_page_preview: true,
-
       text: `✅ PAGAMENTO APROVADO
 
 🎬 ${PRODUCT.name}
@@ -106,73 +100,14 @@ Obrigado pela compra!`,
     },
     {
       timeout: 10000,
-
       headers: {
-        'X-SoftStore-Transaction':
-          transactionId || '',
+        'X-SoftStore-Transaction': transactionId || '',
       },
     }
   );
 }
 
 export default async function handler(req, res) {
-
-  /*
-   * TESTE TEMPORÁRIO DE ENTREGA
-   *
-   * Exemplo:
-   * /api/bravopay?test=1&chat_id=123456789
-   */
-
-  if (
-    req.method === 'GET' &&
-    req.query?.test === '1'
-  ) {
-    try {
-      const chatId =
-        String(req.query?.chat_id || '');
-
-      if (!/^\d+$/.test(chatId)) {
-        return res.status(400).json({
-          ok: false,
-          error: 'chat_id inválido',
-        });
-      }
-
-      const token =
-        process.env.TELEGRAM_BOT_TOKEN;
-
-      if (!token) {
-        throw new Error(
-          'TELEGRAM_BOT_TOKEN não configurada'
-        );
-      }
-
-      await deliver(
-        token,
-        chatId,
-        'TESTE_MANUAL'
-      );
-
-      return res.status(200).json({
-        ok: true,
-        test: true,
-        delivered: true,
-      });
-
-    } catch (error) {
-      console.error(
-        'Teste de entrega error',
-        error.response?.data || error.message
-      );
-
-      return res.status(500).json({
-        ok: false,
-        test: true,
-      });
-    }
-  }
-
   if (req.method === 'GET') {
     return res.status(200).json({
       ok: true,
@@ -187,11 +122,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const rawBody =
-      await readRawBody(req);
+    const rawBody = await readRawBody(req);
 
-    const secret =
-      process.env.BRAVOPAY_WEBHOOK_SECRET;
+    const secret = process.env.BRAVOPAY_WEBHOOK_SECRET;
 
     const signature =
       req.headers['bravopay-signature'] ||
@@ -204,50 +137,33 @@ export default async function handler(req, res) {
       });
     }
 
-    const event =
-      JSON.parse(rawBody);
+    const event = JSON.parse(rawBody);
 
-    if (
-      event?.type !== 'transaction.paid'
-    ) {
+    if (event?.type !== 'transaction.paid') {
       return res.status(200).json({
         ok: true,
         ignored: true,
       });
     }
 
-    const tx =
-      event.data || {};
+    const tx = event.data || {};
 
     const ref =
-      parseReference(
-        tx.external_reference
-      ) ||
+      parseReference(tx.external_reference) ||
       (
-        tx.metadata?.product_id ===
-          PRODUCT.id &&
-        /^\d+$/.test(
-          String(
-            tx.metadata
-              ?.telegram_chat_id || ''
-          )
-        )
+        tx.metadata?.product_id === PRODUCT.id &&
+        /^\d+$/.test(String(tx.metadata?.telegram_chat_id || ''))
           ? {
               productId: PRODUCT.id,
-              chatId: String(
-                tx.metadata
-                  .telegram_chat_id
-              ),
+              chatId: String(tx.metadata.telegram_chat_id),
             }
           : null
       );
 
     if (
       !ref ||
-      Number(tx.amount_cents) !==
-        PRODUCT.priceCents ||
-      String(tx.status).toUpperCase() !==
-        'PAID'
+      Number(tx.amount_cents) !== PRODUCT.priceCents ||
+      String(tx.status).toUpperCase() !== 'PAID'
     ) {
       return res.status(200).json({
         ok: true,
@@ -255,13 +171,10 @@ export default async function handler(req, res) {
       });
     }
 
-    const token =
-      process.env.TELEGRAM_BOT_TOKEN;
+    const token = process.env.TELEGRAM_BOT_TOKEN;
 
     if (!token) {
-      throw new Error(
-        'TELEGRAM_BOT_TOKEN não configurada'
-      );
+      throw new Error('TELEGRAM_BOT_TOKEN não configurada');
     }
 
     await deliver(
@@ -274,7 +187,6 @@ export default async function handler(req, res) {
       ok: true,
       delivered: true,
     });
-
   } catch (error) {
     console.error(
       'BravoPay webhook error',
