@@ -17,10 +17,9 @@ const PRODUCTS = {
   },
 };
 
-const BANNER_URL = 'https://soft-store-bot.vercel.app/assets/banner.png';
 const BRAVOPAY_TRANSACTIONS_URL = 'https://bravopay.club/api/v1/transactions';
-const SUPPORT_URL = 'https://t.me/softx7x';
 const CHECK_CALLBACK_PREFIX = 'check:';
+const SUPPORT_PROMPT_MARKER = '📝 ATENDIMENTO SOFT STORE';
 const BOT_COMMANDS = [
   { command: 'start', description: 'Abrir o menu principal' },
   { command: 'produtos', description: 'Ver produtos disponíveis' },
@@ -42,7 +41,7 @@ const START_KEYBOARD = {
   inline_keyboard: [
     [{ text: '🛒 Produtos', callback_data: 'produtos' }],
     [{ text: '📦 Meus pedidos', callback_data: 'pedidos' }],
-    [{ text: '💬 Suporte', url: SUPPORT_URL }],
+    [{ text: '💬 Suporte', callback_data: 'suporte' }],
   ],
 };
 
@@ -78,19 +77,20 @@ async function answerCallback(token, id, text, showAlert = false) {
   );
 }
 
-async function editCaption(
+async function editMenuMessage(
   token,
-  chatId,
-  messageId,
-  caption,
+  message,
+  text,
   replyMarkup
 ) {
+  const hasPhoto = Array.isArray(message?.photo) && message.photo.length > 0;
+
   await axios.post(
-    tg(token, 'editMessageCaption'),
+    tg(token, hasPhoto ? 'editMessageCaption' : 'editMessageText'),
     {
-      chat_id: chatId,
-      message_id: messageId,
-      caption,
+      chat_id: message.chat.id,
+      message_id: message.message_id,
+      [hasPhoto ? 'caption' : 'text']: text,
       reply_markup: replyMarkup,
     },
     { timeout: 10000 }
@@ -98,15 +98,80 @@ async function editCaption(
 }
 
 async function sendStart(token, chatId) {
+  await sendMessage(token, chatId, START_CAPTION, START_KEYBOARD);
+}
+
+async function requestSupportMessage(token, chatId) {
+  const supportChatId = process.env.SUPPORT_CHAT_ID;
+
+  if (!/^-?\d+$/.test(supportChatId || '')) {
+    await sendMessage(
+      token,
+      chatId,
+      `⚠️ O atendimento está temporariamente indisponível. Tente novamente mais tarde.`
+    );
+    return;
+  }
+
   await axios.post(
-    tg(token, 'sendPhoto'),
+    tg(token, 'sendMessage'),
     {
       chat_id: chatId,
-      photo: BANNER_URL,
-      caption: START_CAPTION,
-      reply_markup: START_KEYBOARD,
+      text: `${SUPPORT_PROMPT_MARKER}
+
+Descreva sua situação em uma única mensagem e envie como resposta aqui. Nossa equipe receberá seu atendimento.`,
+      reply_markup: {
+        force_reply: true,
+        selective: true,
+        input_field_placeholder: 'Descreva sua situação...',
+      },
     },
     { timeout: 10000 }
+  );
+}
+
+async function forwardSupportMessage(token, message) {
+  const supportChatId = process.env.SUPPORT_CHAT_ID;
+
+  if (!/^-?\d+$/.test(supportChatId || '')) {
+    await sendMessage(
+      token,
+      message.chat.id,
+      `⚠️ O atendimento está temporariamente indisponível. Tente novamente mais tarde.`
+    );
+    return;
+  }
+
+  const sender = message.from || {};
+  const fullName = [sender.first_name, sender.last_name].filter(Boolean).join(' ') || 'Cliente';
+  const username = sender.username ? `@${sender.username}` : 'não informado';
+
+  await sendMessage(
+    token,
+    supportChatId,
+    `🆕 NOVO ATENDIMENTO
+
+👤 Cliente: ${fullName}
+🔗 Usuário: ${username}
+🆔 Telegram ID: ${sender.id || message.chat.id}`
+  );
+
+  await axios.post(
+    tg(token, 'forwardMessage'),
+    {
+      chat_id: supportChatId,
+      from_chat_id: message.chat.id,
+      message_id: message.message_id,
+    },
+    { timeout: 10000 }
+  );
+
+  await sendMessage(
+    token,
+    message.chat.id,
+    `✅ MENSAGEM ENVIADA
+
+Sua situação foi encaminhada ao suporte. Aguarde o retorno da nossa equipe.`
   );
 }
 
@@ -496,10 +561,9 @@ async function handleCallback(token, q) {
   if (data === 'produtos') {
     await answerCallback(token, id);
 
-    return editCaption(
+    return editMenuMessage(
       token,
-      chatId,
-      messageId,
+      q.message,
       PRODUCTS_CAPTION,
       PRODUCTS_KEYBOARD
     );
@@ -514,10 +578,9 @@ async function handleCallback(token, q) {
 
     await answerCallback(token, id);
 
-    return editCaption(
+    return editMenuMessage(
       token,
-      chatId,
-      messageId,
+      q.message,
       makeProductCaption(product),
       makeProductKeyboard(product)
     );
@@ -526,10 +589,9 @@ async function handleCallback(token, q) {
   if (data === 'pedidos') {
     await answerCallback(token, id);
 
-    return editCaption(
+    return editMenuMessage(
       token,
-      chatId,
-      messageId,
+      q.message,
       `📦 MEUS PEDIDOS
 
 As compras aprovadas são entregues automaticamente neste chat.`,
@@ -540,14 +602,7 @@ As compras aprovadas são entregues automaticamente neste chat.`,
   if (data === 'suporte') {
     await answerCallback(token, id);
 
-    return sendMessage(
-      token,
-      chatId,
-      `💬 SUPORTE
-
-Fale diretamente com nosso atendimento:
-${SUPPORT_URL}`
-    );
+    return requestSupportMessage(token, chatId);
   }
 
   if (typeof data === 'string' && data.startsWith('como:')) {
@@ -559,10 +614,9 @@ ${SUPPORT_URL}`
 
     await answerCallback(token, id);
 
-    return editCaption(
+    return editMenuMessage(
       token,
-      chatId,
-      messageId,
+      q.message,
       makeHowItWorksCaption(product),
       {
         inline_keyboard: [[{
@@ -576,10 +630,9 @@ ${SUPPORT_URL}`
   if (data === 'inicio') {
     await answerCallback(token, id);
 
-    return editCaption(
+    return editMenuMessage(
       token,
-      chatId,
-      messageId,
+      q.message,
       START_CAPTION,
       START_KEYBOARD
     );
@@ -736,6 +789,17 @@ export default async function handler(req, res) {
     const command = typeof text === 'string'
       ? text.trim().split(/\s+/)[0].toLowerCase().split('@')[0]
       : '';
+    const repliedText = req.body?.message?.reply_to_message?.text;
+
+    if (
+      chatId &&
+      typeof repliedText === 'string' &&
+      repliedText.startsWith(SUPPORT_PROMPT_MARKER)
+    ) {
+      await forwardSupportMessage(token, req.body.message);
+
+      return res.status(200).json({ ok: true });
+    }
 
     if (chatId && (command === '/start' || command === '/menu')) {
       try {
@@ -748,16 +812,7 @@ export default async function handler(req, res) {
     }
 
     if (chatId && command === '/produtos') {
-      await axios.post(
-        tg(token, 'sendPhoto'),
-        {
-          chat_id: chatId,
-          photo: BANNER_URL,
-          caption: PRODUCTS_CAPTION,
-          reply_markup: PRODUCTS_KEYBOARD,
-        },
-        { timeout: 10000 }
-      );
+      await sendMessage(token, chatId, PRODUCTS_CAPTION, PRODUCTS_KEYBOARD);
     }
 
     if (chatId && command === '/pedidos') {
@@ -771,14 +826,27 @@ As compras aprovadas são entregues automaticamente neste chat.`
     }
 
     if (chatId && command === '/suporte') {
+      await requestSupportMessage(token, chatId);
+    }
+
+    if (chatId && command === '/meuid') {
       await sendMessage(
         token,
         chatId,
-        `💬 SUPORTE
-
-Fale diretamente com nosso atendimento:
-${SUPPORT_URL}`
+        `🆔 ID deste chat: ${chatId}`
       );
+    }
+
+    if (
+      chatId &&
+      req.body?.message?.message_id &&
+      ['/start', '/menu', '/produtos', '/pedidos', '/suporte'].includes(command)
+    ) {
+      try {
+        await deleteMessage(token, chatId, req.body.message.message_id);
+      } catch (error) {
+        console.error('Falha ao remover comando do menu', error.response?.data || error.message);
+      }
     }
 
     return res.status(200).json({
