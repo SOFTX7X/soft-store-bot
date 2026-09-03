@@ -117,6 +117,26 @@ Obrigado pela compra!`,
   );
 }
 
+async function deletePaymentMessage(token, chatId, messageId) {
+  if (!/^\d+$/.test(String(messageId || ''))) return;
+
+  try {
+    await axios.post(
+      `https://api.telegram.org/bot${token}/deleteMessage`,
+      {
+        chat_id: chatId,
+        message_id: Number(messageId),
+      },
+      { timeout: 10000 }
+    );
+  } catch (error) {
+    console.error(
+      'Falha ao excluir mensagem PIX após entrega',
+      error.response?.data || error.message
+    );
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     return res.status(200).json({
@@ -190,6 +210,12 @@ export default async function handler(req, res) {
       ref.chatId,
       tx.id,
       product
+    );
+
+    await deletePaymentMessage(
+      token,
+      ref.chatId,
+      tx.metadata?.payment_message_id
     );
 
     return res.status(200).json({

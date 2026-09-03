@@ -21,6 +21,12 @@ const BANNER_URL = 'https://soft-store-bot.vercel.app/assets/banner.png';
 const BRAVOPAY_TRANSACTIONS_URL = 'https://bravopay.club/api/v1/transactions';
 const SUPPORT_URL = 'https://t.me/softx7x';
 const CHECK_CALLBACK_PREFIX = 'check:';
+const BOT_COMMANDS = [
+  { command: 'start', description: 'Abrir o menu principal' },
+  { command: 'produtos', description: 'Ver produtos disponíveis' },
+  { command: 'pedidos', description: 'Informações sobre pedidos' },
+  { command: 'suporte', description: 'Falar com o suporte' },
+];
 
 const START_CAPTION = `🛍️ SOFT STORE
 
@@ -108,6 +114,21 @@ function formatPrice(priceCents) {
   return `R$ ${(priceCents / 100).toFixed(2).replace('.', ',')}`;
 }
 
+async function configureMenu(token) {
+  await Promise.all([
+    axios.post(
+      tg(token, 'setMyCommands'),
+      { commands: BOT_COMMANDS },
+      { timeout: 10000 }
+    ),
+    axios.post(
+      tg(token, 'setChatMenuButton'),
+      { menu_button: { type: 'commands' } },
+      { timeout: 10000 }
+    ),
+  ]);
+}
+
 function getProduct(productId) {
   return Object.hasOwn(PRODUCTS, productId) ? PRODUCTS[productId] : null;
 }
@@ -150,7 +171,7 @@ ${product.name} oferece ${product.summary.toLowerCase()} com acesso vitalício.
 Se preferir, use “🔎 ANALISAR PEDIDO” para consultar a confirmação do pagamento.`;
 }
 
-async function createPix(product, chatId, from) {
+async function createPix(product, chatId, from, paymentMessageId) {
   const apiKey = process.env.BRAVOPAY_API_KEY;
 
   if (!apiKey) {
@@ -184,6 +205,7 @@ async function createPix(product, chatId, from) {
       metadata: {
         telegram_chat_id: String(chatId),
         product_id: product.id,
+        payment_message_id: String(paymentMessageId),
       },
 
       expires_in: 3600,
@@ -294,7 +316,24 @@ async function sendMessage(token, chatId, text, replyMarkup) {
 
   if (replyMarkup) body.reply_markup = replyMarkup;
 
-  await axios.post(tg(token, 'sendMessage'), body, { timeout: 10000 });
+  const { data } = await axios.post(
+    tg(token, 'sendMessage'),
+    body,
+    { timeout: 10000 }
+  );
+
+  return data?.result;
+}
+
+async function deleteMessage(token, chatId, messageId) {
+  await axios.post(
+    tg(token, 'deleteMessage'),
+    {
+      chat_id: chatId,
+      message_id: messageId,
+    },
+    { timeout: 10000 }
+  );
 }
 
 async function removeAnalyzeButton(token, chatId, messageId, pix) {
@@ -360,12 +399,6 @@ Não foi possível confirmar que esta cobrança pertence a este chat e ao produt
   const status = String(tx.status || '').toUpperCase();
 
   if (status === 'PAID' || status === 'APPROVED') {
-    try {
-      await removeAnalyzeButton(token, chatId, messageId, tx.pix?.copy_paste);
-    } catch (error) {
-      console.error('Falha ao remover botão de análise', error.response?.data || error.message);
-    }
-
     await sendMessage(
       token,
       chatId,
@@ -379,6 +412,22 @@ ${product.deliveryUrl}
 
 Obrigado pela compra!`
     );
+
+    try {
+      await deleteMessage(token, chatId, messageId);
+    } catch (error) {
+      console.error('Falha ao excluir mensagem PIX', error.response?.data || error.message);
+
+      try {
+        await removeAnalyzeButton(token, chatId, messageId, tx.pix?.copy_paste);
+      } catch (editError) {
+        console.error(
+          'Falha ao remover botão de análise',
+          editError.response?.data || editError.message
+        );
+      }
+    }
+
     return;
   }
 
@@ -552,20 +601,37 @@ ${SUPPORT_URL}`
       'Gerando seu PIX...'
     );
 
-    const tx = await createPix(product, chatId, q.from);
-    const pix = tx.pix.copy_paste;
+    const paymentMessage = await sendMessage(
+      token,
+      chatId,
+      `⏳ Gerando o PIX de ${product.name}...`
+    );
 
-    if (typeof tx.id !== 'string' || !tx.id) {
-      throw new Error('BravoPay não retornou o ID da transação');
+    if (!paymentMessage?.message_id) {
+      throw new Error('Telegram não retornou o ID da mensagem PIX');
     }
 
-    await axios.post(
-      tg(token, 'sendMessage'),
-      {
-        chat_id: chatId,
-        parse_mode: 'HTML',
+    try {
+      const tx = await createPix(
+        product,
+        chatId,
+        q.from,
+        paymentMessage.message_id
+      );
+      const pix = tx.pix.copy_paste;
 
-        text: `💳 <b>PAGAMENTO PIX</b>
+      if (typeof tx.id !== 'string' || !tx.id) {
+        throw new Error('BravoPay não retornou o ID da transação');
+      }
+
+      await axios.post(
+        tg(token, 'editMessageText'),
+        {
+          chat_id: chatId,
+          message_id: paymentMessage.message_id,
+          parse_mode: 'HTML',
+
+          text: `💳 <b>PAGAMENTO PIX</b>
 
 🎬 Produto: <b>${product.name}</b>
 💰 Valor: <b>${formatPrice(product.priceCents)}</b>
@@ -575,10 +641,33 @@ Realize o pagamento utilizando o PIX Copia e Cola.
 <code>${escapeHtml(pix)}</code>
 
 ⏳ Após o pagamento ser aprovado, o acesso será enviado automaticamente aqui.`,
-        reply_markup: makePaymentKeyboard(pix, tx.id),
-      },
-      { timeout: 10000 }
-    );
+          reply_markup: makePaymentKeyboard(pix, tx.id),
+        },
+        { timeout: 10000 }
+      );
+    } catch (error) {
+      try {
+        await axios.post(
+          tg(token, 'editMessageText'),
+          {
+            chat_id: chatId,
+            message_id: paymentMessage.message_id,
+            text: `⚠️ Não foi possível gerar o PIX agora. Tente novamente em alguns instantes.`,
+            reply_markup: {
+              inline_keyboard: [[{
+                text: '🔄 TENTAR NOVAMENTE',
+                callback_data: `comprar:${product.id}`,
+              }]],
+            },
+          },
+          { timeout: 10000 }
+        );
+      } catch (editError) {
+        console.error('Falha ao atualizar erro do PIX', editError.response?.data || editError.message);
+      }
+
+      throw error;
+    }
 
     return;
   }
@@ -644,13 +733,52 @@ export default async function handler(req, res) {
 
     const chatId = req.body?.message?.chat?.id;
     const text = req.body?.message?.text;
+    const command = typeof text === 'string'
+      ? text.trim().split(/\s+/)[0].toLowerCase().split('@')[0]
+      : '';
 
-    if (
-      chatId &&
-      typeof text === 'string' &&
-      /^\/start(?:\s|$)/i.test(text.trim())
-    ) {
+    if (chatId && (command === '/start' || command === '/menu')) {
+      try {
+        await configureMenu(token);
+      } catch (error) {
+        console.error('Falha ao configurar menu do bot', error.response?.data || error.message);
+      }
+
       await sendStart(token, chatId);
+    }
+
+    if (chatId && command === '/produtos') {
+      await axios.post(
+        tg(token, 'sendPhoto'),
+        {
+          chat_id: chatId,
+          photo: BANNER_URL,
+          caption: PRODUCTS_CAPTION,
+          reply_markup: PRODUCTS_KEYBOARD,
+        },
+        { timeout: 10000 }
+      );
+    }
+
+    if (chatId && command === '/pedidos') {
+      await sendMessage(
+        token,
+        chatId,
+        `📦 MEUS PEDIDOS
+
+As compras aprovadas são entregues automaticamente neste chat.`
+      );
+    }
+
+    if (chatId && command === '/suporte') {
+      await sendMessage(
+        token,
+        chatId,
+        `💬 SUPORTE
+
+Fale diretamente com nosso atendimento:
+${SUPPORT_URL}`
+      );
     }
 
     return res.status(200).json({
