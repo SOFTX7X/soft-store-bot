@@ -1,10 +1,20 @@
 import axios from 'axios';
 
-const PRODUCT = {
-  id: 'viralflix',
-  name: 'VIRALFLIX',
-  priceCents: 500,
-  deliveryUrl: 'https://drive.google.com/file/d/1j8EJL_OjCmkgA8AjZzc0D6_pK4Y3qB9G/view?usp=drivesdk',
+const PRODUCTS = {
+  viralflix: {
+    id: 'viralflix',
+    name: 'VIRALFLIX',
+    priceCents: 500,
+    summary: '+ de 50.000 cortes virais',
+    deliveryUrl: 'https://drive.google.com/file/d/1j8EJL_OjCmkgA8AjZzc0D6_pK4Y3qB9G/view?usp=drivesdk',
+  },
+  stories: {
+    id: 'stories',
+    name: 'STORIES CRIATIVOS',
+    priceCents: 800,
+    summary: 'Conteúdos criativos para seus stories',
+    deliveryUrl: 'https://drive.google.com/drive/folders/1w8KVWYMOswsujwfO0WZuSeGiD5vPik7X',
+  },
 };
 
 const BANNER_URL = 'https://soft-store-bot.vercel.app/assets/banner.png';
@@ -18,22 +28,9 @@ Bem-vindo à SOFT Store.
 
 Escolha uma opção abaixo:`;
 
-const PRODUCT_CAPTION = `🎬 VIRALFLIX
+const PRODUCTS_CAPTION = `🛒 PRODUTOS
 
-+ de 50.000 cortes virais
-Acesso vitalício
-
-💰 R$ 5,00`;
-
-const HOW_IT_WORKS_CAPTION = `📖 COMO FUNCIONA
-
-O VIRALFLIX reúne mais de 50.000 cortes virais em um acesso vitalício.
-
-1. Toque em “Comprar por R$ 5,00”.
-2. Pague com o PIX Copia e Cola gerado.
-3. Após a aprovação, o acesso será enviado automaticamente neste chat.
-
-Se preferir, use “🔎 ANALISAR PEDIDO” para consultar a confirmação do pagamento.`;
+Escolha o produto que deseja conhecer:`;
 
 const START_KEYBOARD = {
   inline_keyboard: [
@@ -43,10 +40,10 @@ const START_KEYBOARD = {
   ],
 };
 
-const PRODUCT_KEYBOARD = {
+const PRODUCTS_KEYBOARD = {
   inline_keyboard: [
-    [{ text: '🛒 Comprar por R$ 5,00', callback_data: 'comprar_viralflix' }],
-    [{ text: '📖 COMO FUNCIONA', callback_data: 'como_funciona' }],
+    [{ text: '🎬 VIRALFLIX — R$ 5,00', callback_data: 'produto:viralflix' }],
+    [{ text: '🎨 STORIES CRIATIVOS — R$ 8,00', callback_data: 'produto:stories' }],
     [{ text: '⬅️ Voltar', callback_data: 'inicio' }],
   ],
 };
@@ -107,11 +104,53 @@ async function sendStart(token, chatId) {
   );
 }
 
-function makeReference(chatId) {
-  return `softstore:${PRODUCT.id}:${chatId}:${Date.now()}`;
+function formatPrice(priceCents) {
+  return `R$ ${(priceCents / 100).toFixed(2).replace('.', ',')}`;
 }
 
-async function createPix(chatId, from) {
+function getProduct(productId) {
+  return Object.hasOwn(PRODUCTS, productId) ? PRODUCTS[productId] : null;
+}
+
+function makeReference(product, chatId) {
+  return `softstore:${product.id}:${chatId}:${Date.now()}`;
+}
+
+function makeProductCaption(product) {
+  return `🎬 ${product.name}
+
+${product.summary}
+Acesso vitalício
+
+💰 ${formatPrice(product.priceCents)}`;
+}
+
+function makeProductKeyboard(product) {
+  return {
+    inline_keyboard: [
+      [{
+        text: `🛒 Comprar por ${formatPrice(product.priceCents)}`,
+        callback_data: `comprar:${product.id}`,
+      }],
+      [{ text: '📖 COMO FUNCIONA', callback_data: `como:${product.id}` }],
+      [{ text: '⬅️ Voltar', callback_data: 'produtos' }],
+    ],
+  };
+}
+
+function makeHowItWorksCaption(product) {
+  return `📖 COMO FUNCIONA
+
+${product.name} oferece ${product.summary.toLowerCase()} com acesso vitalício.
+
+1. Toque em “Comprar por ${formatPrice(product.priceCents)}”.
+2. Pague com o PIX Copia e Cola gerado.
+3. Após a aprovação, o acesso será enviado automaticamente neste chat.
+
+Se preferir, use “🔎 ANALISAR PEDIDO” para consultar a confirmação do pagamento.`;
+}
+
+async function createPix(product, chatId, from) {
   const apiKey = process.env.BRAVOPAY_API_KEY;
 
   if (!apiKey) {
@@ -125,12 +164,12 @@ async function createPix(chatId, from) {
 
   const email = `telegram${chatId}@softstore.local`;
 
-  const externalReference = makeReference(chatId);
+  const externalReference = makeReference(product, chatId);
 
   const { data } = await axios.post(
     BRAVOPAY_TRANSACTIONS_URL,
     {
-      amount_cents: PRODUCT.priceCents,
+      amount_cents: product.priceCents,
       method: 'pix',
 
       customer: {
@@ -138,13 +177,13 @@ async function createPix(chatId, from) {
         email,
       },
 
-      description: `${PRODUCT.name} - acesso vitalício`,
+      description: `${product.name} - acesso vitalício`,
 
       external_reference: externalReference,
 
       metadata: {
         telegram_chat_id: String(chatId),
-        product_id: PRODUCT.id,
+        product_id: product.id,
       },
 
       expires_in: 3600,
@@ -174,7 +213,7 @@ function parseReference(value = '') {
 
   if (
     store !== 'softstore' ||
-    productId !== PRODUCT.id ||
+    !getProduct(productId) ||
     !/^-?\d+$/.test(chatId || '') ||
     !/^\d+$/.test(timestamp || '') ||
     extra.length
@@ -185,18 +224,21 @@ function parseReference(value = '') {
   return { productId, chatId };
 }
 
-function isOwnedProductTransaction(tx, transactionId, chatId) {
+function getOwnedProduct(tx, transactionId, chatId) {
   const reference = parseReference(tx?.external_reference);
+  const product = getProduct(tx?.metadata?.product_id);
 
-  return (
+  const valid = (
+    product &&
     String(tx?.id || '') === transactionId &&
-    Number(tx?.amount_cents) === PRODUCT.priceCents &&
+    Number(tx?.amount_cents) === product.priceCents &&
     String(tx?.method || '').toUpperCase() === 'PIX' &&
-    tx?.metadata?.product_id === PRODUCT.id &&
     String(tx?.metadata?.telegram_chat_id || '') === String(chatId) &&
-    reference?.productId === PRODUCT.id &&
+    reference?.productId === product.id &&
     reference?.chatId === String(chatId)
   );
+
+  return valid ? product : null;
 }
 
 function makePaymentKeyboard(pix, transactionId) {
@@ -302,13 +344,15 @@ Não conseguimos consultar o pagamento agora. Aguarde alguns segundos e toque no
     return;
   }
 
-  if (!isOwnedProductTransaction(tx, transactionId, chatId)) {
+  const product = getOwnedProduct(tx, transactionId, chatId);
+
+  if (!product) {
     await sendMessage(
       token,
       chatId,
       `🔒 PEDIDO NÃO VALIDADO
 
-Não foi possível confirmar que esta cobrança pertence a este chat e ao produto VIRALFLIX. Nenhum acesso foi liberado.`
+Não foi possível confirmar que esta cobrança pertence a este chat e ao produto comprado. Nenhum acesso foi liberado.`
     );
     return;
   }
@@ -327,11 +371,11 @@ Não foi possível confirmar que esta cobrança pertence a este chat e ao produt
       chatId,
       `✅ PAGAMENTO APROVADO
 
-🎬 ${PRODUCT.name}
+🎬 ${product.name}
 Acesso vitalício
 
 📦 Seu acesso:
-${PRODUCT.deliveryUrl}
+${product.deliveryUrl}
 
 Obrigado pela compra!`
     );
@@ -363,7 +407,7 @@ Esta cobrança não está mais disponível.`,
       {
         inline_keyboard: [[{
           text: '🔄 GERAR NOVO PIX',
-          callback_data: 'comprar_viralflix',
+          callback_data: `comprar:${product.id}`,
         }]],
       }
     );
@@ -407,8 +451,26 @@ async function handleCallback(token, q) {
       token,
       chatId,
       messageId,
-      PRODUCT_CAPTION,
-      PRODUCT_KEYBOARD
+      PRODUCTS_CAPTION,
+      PRODUCTS_KEYBOARD
+    );
+  }
+
+  if (typeof data === 'string' && data.startsWith('produto:')) {
+    const product = getProduct(data.slice('produto:'.length));
+
+    if (!product) {
+      return answerCallback(token, id, 'Produto não encontrado.', true);
+    }
+
+    await answerCallback(token, id);
+
+    return editCaption(
+      token,
+      chatId,
+      messageId,
+      makeProductCaption(product),
+      makeProductKeyboard(product)
     );
   }
 
@@ -439,15 +501,26 @@ ${SUPPORT_URL}`
     );
   }
 
-  if (data === 'como_funciona') {
+  if (typeof data === 'string' && data.startsWith('como:')) {
+    const product = getProduct(data.slice('como:'.length));
+
+    if (!product) {
+      return answerCallback(token, id, 'Produto não encontrado.', true);
+    }
+
     await answerCallback(token, id);
 
     return editCaption(
       token,
       chatId,
       messageId,
-      HOW_IT_WORKS_CAPTION,
-      BACK_KEYBOARD
+      makeHowItWorksCaption(product),
+      {
+        inline_keyboard: [[{
+          text: '⬅️ Voltar',
+          callback_data: `produto:${product.id}`,
+        }]],
+      }
     );
   }
 
@@ -463,14 +536,23 @@ ${SUPPORT_URL}`
     );
   }
 
-  if (data === 'comprar_viralflix') {
+  if (data === 'comprar_viralflix' || (typeof data === 'string' && data.startsWith('comprar:'))) {
+    const productId = data === 'comprar_viralflix'
+      ? 'viralflix'
+      : data.slice('comprar:'.length);
+    const product = getProduct(productId);
+
+    if (!product) {
+      return answerCallback(token, id, 'Produto não encontrado.', true);
+    }
+
     await answerCallback(
       token,
       id,
       'Gerando seu PIX...'
     );
 
-    const tx = await createPix(chatId, q.from);
+    const tx = await createPix(product, chatId, q.from);
     const pix = tx.pix.copy_paste;
 
     if (typeof tx.id !== 'string' || !tx.id) {
@@ -485,8 +567,8 @@ ${SUPPORT_URL}`
 
         text: `💳 <b>PAGAMENTO PIX</b>
 
-🎬 Produto: <b>${PRODUCT.name}</b>
-💰 Valor: <b>R$ 5,00</b>
+🎬 Produto: <b>${product.name}</b>
+💰 Valor: <b>${formatPrice(product.priceCents)}</b>
 
 Realize o pagamento utilizando o PIX Copia e Cola.
 

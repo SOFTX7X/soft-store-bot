@@ -1,11 +1,19 @@
 import crypto from 'node:crypto';
 import axios from 'axios';
 
-const PRODUCT = {
-  id: 'viralflix',
-  name: 'VIRALFLIX',
-  priceCents: 500,
-  deliveryUrl: 'https://drive.google.com/file/d/1j8EJL_OjCmkgA8AjZzc0D6_pK4Y3qB9G/view?usp=drivesdk',
+const PRODUCTS = {
+  viralflix: {
+    id: 'viralflix',
+    name: 'VIRALFLIX',
+    priceCents: 500,
+    deliveryUrl: 'https://drive.google.com/file/d/1j8EJL_OjCmkgA8AjZzc0D6_pK4Y3qB9G/view?usp=drivesdk',
+  },
+  stories: {
+    id: 'stories',
+    name: 'STORIES CRIATIVOS',
+    priceCents: 800,
+    deliveryUrl: 'https://drive.google.com/drive/folders/1w8KVWYMOswsujwfO0WZuSeGiD5vPik7X',
+  },
 };
 
 export const config = {
@@ -66,12 +74,14 @@ function verify(rawBody, header, secret, toleranceSec = 300) {
 }
 
 function parseReference(ref = '') {
-  const [store, productId, chatId] = String(ref).split(':');
+  const [store, productId, chatId, timestamp, ...extra] = String(ref).split(':');
 
   if (
     store !== 'softstore' ||
-    productId !== PRODUCT.id ||
-    !/^\d+$/.test(chatId || '')
+    !Object.hasOwn(PRODUCTS, productId) ||
+    !/^-?\d+$/.test(chatId || '') ||
+    !/^\d+$/.test(timestamp || '') ||
+    extra.length
   ) {
     return null;
   }
@@ -82,7 +92,7 @@ function parseReference(ref = '') {
   };
 }
 
-async function deliver(token, chatId, transactionId) {
+async function deliver(token, chatId, transactionId, product) {
   await axios.post(
     `https://api.telegram.org/bot${token}/sendMessage`,
     {
@@ -90,11 +100,11 @@ async function deliver(token, chatId, transactionId) {
       disable_web_page_preview: true,
       text: `✅ PAGAMENTO APROVADO
 
-🎬 ${PRODUCT.name}
+🎬 ${product.name}
 Acesso vitalício
 
 📦 Seu acesso:
-${PRODUCT.deliveryUrl}
+${product.deliveryUrl}
 
 Obrigado pela compra!`,
     },
@@ -148,21 +158,19 @@ export default async function handler(req, res) {
 
     const tx = event.data || {};
 
-    const ref =
-      parseReference(tx.external_reference) ||
-      (
-        tx.metadata?.product_id === PRODUCT.id &&
-        /^\d+$/.test(String(tx.metadata?.telegram_chat_id || ''))
-          ? {
-              productId: PRODUCT.id,
-              chatId: String(tx.metadata.telegram_chat_id),
-            }
-          : null
-      );
+    const ref = parseReference(tx.external_reference);
+    const metadataProductId = tx.metadata?.product_id;
+    const metadataChatId = String(tx.metadata?.telegram_chat_id || '');
+    const product = Object.hasOwn(PRODUCTS, metadataProductId)
+      ? PRODUCTS[metadataProductId]
+      : null;
 
     if (
       !ref ||
-      Number(tx.amount_cents) !== PRODUCT.priceCents ||
+      !product ||
+      ref.productId !== product.id ||
+      ref.chatId !== metadataChatId ||
+      Number(tx.amount_cents) !== product.priceCents ||
       String(tx.status).toUpperCase() !== 'PAID'
     ) {
       return res.status(200).json({
@@ -180,7 +188,8 @@ export default async function handler(req, res) {
     await deliver(
       token,
       ref.chatId,
-      tx.id
+      tx.id,
+      product
     );
 
     return res.status(200).json({
