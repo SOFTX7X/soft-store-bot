@@ -153,7 +153,9 @@ async function forwardSupportMessage(token, message) {
 
 👤 Cliente: ${fullName}
 🔗 Usuário: ${username}
-🆔 Telegram ID: ${sender.id || message.chat.id}`
+🆔 Telegram ID: ${sender.id || message.chat.id}
+
+↩️ Para responder como SOFT STORE, responda diretamente a esta ficha.`
   );
 
   await axios.post(
@@ -172,6 +174,57 @@ async function forwardSupportMessage(token, message) {
     `✅ MENSAGEM ENVIADA
 
 Sua situação foi encaminhada ao suporte. Aguarde o retorno da nossa equipe.`
+  );
+}
+
+function getCustomerIdFromSupportReply(message) {
+  const supportChatId = process.env.SUPPORT_CHAT_ID;
+  const repliedText = message?.reply_to_message?.text;
+
+  if (
+    String(message?.chat?.id || '') !== String(supportChatId || '') ||
+    typeof repliedText !== 'string'
+  ) {
+    return null;
+  }
+
+  const match = repliedText.match(/Telegram ID:\s*(\d+)/i);
+  return match?.[1] || null;
+}
+
+async function relaySupportReply(token, message, customerChatId) {
+  if (message.from?.is_bot) return;
+
+  if (typeof message.text === 'string' && message.text.trim()) {
+    await sendMessage(
+      token,
+      customerChatId,
+      `💬 RESPOSTA DO SUPORTE
+
+${message.text.trim()}`
+    );
+  } else {
+    await sendMessage(
+      token,
+      customerChatId,
+      `💬 RESPOSTA DO SUPORTE`
+    );
+
+    await axios.post(
+      tg(token, 'copyMessage'),
+      {
+        chat_id: customerChatId,
+        from_chat_id: message.chat.id,
+        message_id: message.message_id,
+      },
+      { timeout: 10000 }
+    );
+  }
+
+  await sendMessage(
+    token,
+    message.chat.id,
+    `✅ Resposta enviada ao cliente pelo bot.`
   );
 }
 
@@ -790,6 +843,13 @@ export default async function handler(req, res) {
       ? text.trim().split(/\s+/)[0].toLowerCase().split('@')[0]
       : '';
     const repliedText = req.body?.message?.reply_to_message?.text;
+    const supportCustomerId = getCustomerIdFromSupportReply(req.body?.message);
+
+    if (supportCustomerId) {
+      await relaySupportReply(token, req.body.message, supportCustomerId);
+
+      return res.status(200).json({ ok: true });
+    }
 
     if (
       chatId &&
