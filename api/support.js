@@ -18,23 +18,33 @@ function validateInitData(initData, botToken) {
   if (!/^[a-f0-9]{64}$/i.test(receivedHash || '') || !Number.isInteger(authDate)) return null;
   if (Math.abs(Math.floor(Date.now() / 1000) - authDate) > 600) return null;
 
-  params.delete('hash');
-  const dataCheckString = [...params.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${key}=${value}`)
-    .join('\n');
-
   const secretKey = crypto
     .createHmac('sha256', 'WebAppData')
     .update(botToken)
     .digest();
-  const expectedHash = crypto
-    .createHmac('sha256', secretKey)
-    .update(dataCheckString)
-    .digest('hex');
 
-  if (expectedHash.length !== receivedHash.length) return null;
-  if (!crypto.timingSafeEqual(Buffer.from(expectedHash), Buffer.from(receivedHash))) return null;
+  params.delete('hash');
+  const entries = [...params.entries()];
+  const checkHash = (fields) => {
+    const dataCheckString = fields
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${value}`)
+      .join('\n');
+    const expectedHash = crypto
+      .createHmac('sha256', secretKey)
+      .update(dataCheckString)
+      .digest('hex');
+
+    return expectedHash.length === receivedHash.length
+      && crypto.timingSafeEqual(Buffer.from(expectedHash), Buffer.from(receivedHash));
+  };
+
+  // Telegram clients introduced the optional Ed25519 `signature` field after
+  // the original bot-token validation format. Clients in circulation may
+  // calculate the legacy hash with or without this auxiliary field.
+  const validHash = checkHash([...entries])
+    || (params.has('signature') && checkHash(entries.filter(([key]) => key !== 'signature')));
+  if (!validHash) return null;
 
   try {
     const user = JSON.parse(params.get('user') || 'null');
