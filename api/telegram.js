@@ -20,6 +20,7 @@ const PRODUCTS = {
 const BRAVOPAY_TRANSACTIONS_URL = 'https://bravopay.club/api/v1/transactions';
 const CHECK_CALLBACK_PREFIX = 'check:';
 const SUPPORT_PROMPT_MARKER = '📝 ATENDIMENTO SOFT STORE';
+const SUPPORT_MINI_APP_URL = 'https://s0ft.site/suporte';
 const BOT_COMMANDS = [
   { command: 'start', description: 'Abrir o menu principal' },
   { command: 'produtos', description: 'Ver produtos disponíveis' },
@@ -41,7 +42,7 @@ const START_KEYBOARD = {
   inline_keyboard: [
     [{ text: '🛒 Produtos', callback_data: 'produtos' }],
     [{ text: '📦 Meus pedidos', callback_data: 'pedidos' }],
-    [{ text: '💬 Suporte', callback_data: 'suporte' }],
+    [{ text: '💬 Suporte', web_app: { url: SUPPORT_MINI_APP_URL } }],
   ],
 };
 
@@ -102,31 +103,18 @@ async function sendStart(token, chatId) {
 }
 
 async function requestSupportMessage(token, chatId) {
-  const supportChatId = process.env.SUPPORT_CHAT_ID;
+  await sendMessage(
+    token,
+    chatId,
+    `💬 SUPORTE SOFT STORE
 
-  if (!/^-?\d+$/.test(supportChatId || '')) {
-    await sendMessage(
-      token,
-      chatId,
-      `⚠️ O atendimento está temporariamente indisponível. Tente novamente mais tarde.`
-    );
-    return;
-  }
-
-  await axios.post(
-    tg(token, 'sendMessage'),
+Abra o atendimento seguro para descrever sua situação.`,
     {
-      chat_id: chatId,
-      text: `${SUPPORT_PROMPT_MARKER}
-
-Descreva sua situação em uma única mensagem e envie como resposta aqui. Nossa equipe receberá seu atendimento.`,
-      reply_markup: {
-        force_reply: true,
-        selective: true,
-        input_field_placeholder: 'Descreva sua situação...',
-      },
-    },
-    { timeout: 10000 }
+      inline_keyboard: [[{
+        text: '💬 ABRIR ATENDIMENTO',
+        web_app: { url: SUPPORT_MINI_APP_URL },
+      }]],
+    }
   );
 }
 
