@@ -207,7 +207,7 @@
       statusBox.className = 'status';
 
       try {
-        const response = await fetch('https://soft-store-bot.vercel.app/api/support', {
+        const response = await fetch('/api/support', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
