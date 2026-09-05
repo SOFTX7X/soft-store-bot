@@ -21,6 +21,7 @@ const BRAVOPAY_TRANSACTIONS_URL = 'https://bravopay.club/api/v1/transactions';
 const CHECK_CALLBACK_PREFIX = 'check:';
 const SUPPORT_PROMPT_MARKER = '📝 ATENDIMENTO SOFT STORE';
 const SUPPORT_MINI_APP_URL = 'https://s0ft.site/suporte';
+const TELEGRAM_WEBHOOK_URL = 'https://s0ft.site/api/telegram';
 const BOT_COMMANDS = [
   { command: 'start', description: 'Abrir o menu principal' },
   { command: 'produtos', description: 'Ver produtos disponíveis' },
@@ -791,11 +792,37 @@ function escapeHtml(value = '') {
 }
 
 export default async function handler(req, res) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+
   if (req.method === 'GET') {
-    return res.status(200).json({
-      ok: true,
-      message: 'SOFT Store Bot está online.',
-    });
+    if (!token) {
+      return res.status(503).json({ ok: false, error: 'Bot não configurado.' });
+    }
+
+    try {
+      const webhook = await axios.get(tg(token, 'getWebhookInfo'), { timeout: 10000 });
+
+      if (webhook.data?.result?.url !== TELEGRAM_WEBHOOK_URL) {
+        await axios.post(
+          tg(token, 'setWebhook'),
+          {
+            url: TELEGRAM_WEBHOOK_URL,
+            allowed_updates: ['message', 'callback_query'],
+            drop_pending_updates: false,
+          },
+          { timeout: 10000 }
+        );
+      }
+
+      return res.status(200).json({
+        ok: true,
+        message: 'SOFT Store Bot está online.',
+        webhook: TELEGRAM_WEBHOOK_URL,
+      });
+    } catch (error) {
+      console.error('Falha ao verificar webhook', error.response?.data || error.message);
+      return res.status(502).json({ ok: false, error: 'Falha ao configurar webhook.' });
+    }
   }
 
   if (req.method !== 'POST') {
@@ -803,8 +830,6 @@ export default async function handler(req, res) {
       ok: false,
     });
   }
-
-  const token = process.env.TELEGRAM_BOT_TOKEN;
 
   if (!token) {
     return res.status(200).json({
