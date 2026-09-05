@@ -8,6 +8,40 @@ const CATEGORIES = {
   outro: 'Outro assunto',
 };
 
+const TELEGRAM_PRODUCTION_PUBLIC_KEY = 'e7bf03a2fa4602af4580703d88dda5bb59f32ed8b02a56c187fe7d34caed242d';
+
+function validateTelegramSignature(params, botToken) {
+  const signature = params.get('signature');
+  const botId = String(botToken || '').split(':')[0];
+
+  if (!signature || !/^\d+$/.test(botId)) return false;
+
+  try {
+    const fields = [...params.entries()]
+      .filter(([key]) => key !== 'hash' && key !== 'signature')
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, value]) => `${key}=${value}`)
+      .join('\n');
+    const dataCheckString = `${botId}:WebAppData\n${fields}`;
+    const rawPublicKey = Buffer.from(TELEGRAM_PRODUCTION_PUBLIC_KEY, 'hex');
+    const spkiPrefix = Buffer.from('302a300506032b6570032100', 'hex');
+    const publicKey = crypto.createPublicKey({
+      key: Buffer.concat([spkiPrefix, rawPublicKey]),
+      format: 'der',
+      type: 'spki',
+    });
+
+    return crypto.verify(
+      null,
+      Buffer.from(dataCheckString, 'utf8'),
+      publicKey,
+      Buffer.from(signature, 'base64url')
+    );
+  } catch {
+    return false;
+  }
+}
+
 function validateInitData(initData, botToken) {
   if (typeof initData !== 'string' || !initData || initData.length > 10000) return null;
 
@@ -44,7 +78,8 @@ function validateInitData(initData, botToken) {
   // calculate the legacy hash with or without this auxiliary field.
   const validHash = checkHash([...entries])
     || (params.has('signature') && checkHash(entries.filter(([key]) => key !== 'signature')));
-  if (!validHash) return null;
+  const validSignature = validateTelegramSignature(params, botToken);
+  if (!validHash && !validSignature) return null;
 
   try {
     const user = JSON.parse(params.get('user') || 'null');
